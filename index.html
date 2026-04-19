@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a0a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Belső Hold">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>Belső Hold 🌙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --void: #0d0618;
+  --deep: #1a0a2e;
+  --purple: #2d1557;
+  --purple-mid: #4a2080;
+  --purple-light: #7b4fa6;
+  --gold: #c9a84c;
+  --gold-light: #e8c96d;
+  --gold-shine: #f5e099;
+  --silver: #c8d4e8;
+  --silver-dim: #8a96b0;
+  --text: #e8dff5;
+  --text-dim: #a090c0;
+  --text-faint: #6a5a8a;
+  --glow-purple: rgba(123,79,166,0.4);
+  --glow-gold: rgba(201,168,76,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Crimson Pro', Georgia, serif;
+  overflow: hidden;
+}
+
+/* ── STARS BACKGROUND ── */
+#stars-canvas {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+
+/* ── MAIN SHELL ── */
+#app {
+  position: relative; z-index: 1;
+  height: 100dvh;
+  display: flex; flex-direction: column;
+  max-width: 480px; margin: 0 auto;
+}
+
+/* ── SCREENS ── */
+.screen {
+  display: none;
+  padding: 0 0 80px 0;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── TOP HEADER ── */
+.app-header {
+  text-align: center;
+  padding: 20px 20px 0;
+  flex-shrink: 0;
+}
+.app-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-shadow: 0 0 20px var(--glow-gold);
+}
+.app-date {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* ── BOTTOM NAV ── */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: linear-gradient(to top, rgba(13,6,24,0.98), rgba(26,10,46,0.95));
+  border-top: 1px solid rgba(201,168,76,0.2);
+  display: flex;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 10px 4px 8px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint);
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem; letter-spacing: 0.05em;
+  transition: color 0.3s;
+  gap: 4px;
+}
+.nav-btn .nav-icon { font-size: 1.3rem; line-height: 1; }
+.nav-btn.active { color: var(--gold); }
+.nav-btn.active .nav-icon { filter: drop-shadow(0 0 6px var(--glow-gold)); }
+
+/* ── CARD ── */
+.card {
+  background: linear-gradient(135deg, rgba(45,21,87,0.6), rgba(26,10,46,0.8));
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 12px 16px 0;
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════
+   SCREEN 1 – MA (Today)
+══════════════════════════════════ */
+#screen-ma .moon-hero {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 20px 0;
+}
+
+#moon-svg-wrap {
+  width: 130px; height: 130px; position: relative;
+  filter: drop-shadow(0 0 30px rgba(201,168,76,0.5));
+  animation: moon-float 6s ease-in-out infinite;
+}
+@keyframes moon-float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.moon-phase-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem; color: var(--gold-light);
+  margin-top: 10px; letter-spacing: 0.1em;
+  text-shadow: 0 0 15px var(--glow-gold);
+}
+.moon-illumination {
+  font-size: 0.85rem; color: var(--text-dim);
+  margin-top: 3px;
+}
+
+.moon-sign-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px; font-size: 0.95rem;
+}
+.sign-badge {
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 20px; padding: 3px 12px;
+  font-family: 'Cinzel', serif; font-size: 0.75rem;
+  color: var(--gold-light);
+}
+
+/* Daily energy card */
+.energy-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem; letter-spacing: 0.2em;
+  color: var(--gold); text-transform: uppercase; margin-bottom: 8px;
+}
+.energy-text {
+  font-size: 1rem; line-height: 1.7;
+  color: var(--text); font-style: italic;
+}
+
+/* Oldószöveg card */
+.oldo-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem; letter-spacing: 0.2em;
+  color: var(--purple-light); text-transform: uppercase; margin-bottom: 8px;
+}
+.oldo-text {
+  font-size: 1rem; line-height: 1.85;
+  color: var(--silver);
+  white-space: pre-line;
+}
+
+/* Times row */
+.times-row {
+  display: flex; justify-content: space-around;
+  padding: 8px 0 0;
+}
+.time-item { text-align: center; }
+.time-label {
+  font-size: 0.7rem; color: var(--text-faint);
+  font-family: 'Cinzel', serif; letter-spacing: 0.1em;
+}
+.time-value { font-size: 1rem; color: var(--silver); margin-top: 2px; }
+
+/* Crystal reminder */
+.crystal-banner {
+  margin: 12px 16px 0;
+  background: linear-gradient(135deg, rgba(74,32,128,0.5), rgba(45,21,87,0.7));
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 12px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.crystal-banner.hidden { display: none; }
+.crystal-icon { font-size: 1.8rem; flex-shrink: 0; }
+.crystal-text { flex: 1; }
+.crystal-title {
+  font-family: 'Cinzel', serif; font-size: 0.8rem;
+  color: var(--gold-light); letter-spacing: 0.05em;
+}
+.crystal-sub { font-size: 0.85rem; color: var(--text-dim); margin-top: 2px; }
+
+/* ══════════════════════════════════
+   SCREEN 2 – NAPTÁR
+══════════════════════════════════ */
+#screen-naptar {
+  padding-bottom: 80px;
+}
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 0;
+}
+.cal-month {
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  color: var(--gold); letter-spacing: 0.1em;
+}
+.cal-nav-btn {
+  background: none; border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 8px; width: 32px; height: 32px;
+  color: var(--gold); cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.cal-grid-header {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  padding: 12px 16px 4px;
+  text-align: center;
+}
+.cal-dow {
+  font-family: 'Cinzel', serif; font-size: 0.6rem;
+  color: var(--text-faint); letter-spacing: 0.1em;
+}
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  padding: 0 16px; gap: 3px;
+}
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-radius: 50%; cursor: pointer;
+  position: relative; font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.cal-day:hover { background: rgba(201,168,76,0.1); }
+.cal-day.today {
+  background: rgba(201,168,76,0.2);
+  border: 1px solid rgba(201,168,76,0.5);
+  color: var(--gold-light);
+}
+.cal-day.other-month { color: var(--text-faint); opacity: 0.4; }
+.cal-day .day-moon { font-size: 0.75rem; line-height: 1; }
+.cal-day .day-num { font-size: 0.75rem; line-height: 1.2; }
+.cal-day.newmoon { background: rgba(255,255,255,0.05); }
+.cal-day.fullmoon { background: rgba(201,168,76,0.15); }
+
+.cal-legend {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 12px 16px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--text-dim);
+}
+
+/* Upcoming events */
+.upcoming-title {
+  font-family: 'Cinzel', serif; font-size: 0.7rem;
+  letter-spacing: 0.15em; color: var(--gold);
+  padding: 4px 16px 8px; text-transform: uppercase;
+}
+.event-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-bottom: 1px solid rgba(201,168,76,0.08);
+}
+.event-moon { font-size: 1.3rem; }
+.event-info { flex: 1; }
+.event-name {
+  font-family: 'Cinzel', serif; font-size: 0.8rem; color: var(--gold-light);
+}
+.event-date { font-size: 0.8rem; color: var(--text-dim); margin-top: 1px; }
+.event-days {
+  font-size: 0.75rem; color: var(--text-faint);
+  background: rgba(201,168,76,0.1);
+  border-radius: 12px; padding: 2px 8px;
+}
+
+/* ══════════════════════════════════
+   SCREEN 3 – RITUÁLÉ
+══════════════════════════════════ */
+.ritual-hero {
+  text-align: center; padding: 20px 20px 0;
+}
+.ritual-phase-icon { font-size: 3rem; line-height: 1; }
+.ritual-title {
+  font-family: 'Cinzel', serif; font-size: 1.1rem;
+  color: var(--gold); margin-top: 8px; letter-spacing: 0.1em;
+}
+.ritual-subtitle { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; font-style: italic; }
+
+.ritual-steps { padding: 0 16px; }
+.ritual-step {
+  display: flex; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+  cursor: pointer;
+}
+.ritual-step:last-child { border-bottom: none; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 0.75rem;
+  color: var(--gold); flex-shrink: 0; margin-top: 2px;
+}
+.step-num.done {
+  background: rgba(201,168,76,0.3);
+  color: var(--gold-shine);
+}
+.step-content { flex: 1; }
+.step-title {
+  font-family: 'Cinzel', serif; font-size: 0.85rem;
+  color: var(--silver); letter-spacing: 0.05em;
+}
+.step-desc { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; line-height: 1.6; }
+.step-emoji { font-size: 1.1rem; }
+
+/* Journal prompt */
+.journal-prompt-area {
+  margin: 0 16px;
+}
+.journal-question {
+  font-size: 0.95rem; color: var(--silver); font-style: italic;
+  line-height: 1.7; margin-bottom: 10px;
+}
+.journal-input {
+  width: 100%; min-height: 100px;
+  background: rgba(13,6,24,0.7);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 10px; padding: 12px;
+  color: var(--text); font-family: 'Crimson Pro', serif;
+  font-size: 1rem; resize: vertical;
+  outline: none; transition: border-color 0.3s;
+}
+.journal-input:focus { border-color: rgba(201,168,76,0.5); }
+.save-btn {
+  width: 100%; margin-top: 10px;
+  background: linear-gradient(135deg, var(--purple-mid), var(--purple));
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 10px; padding: 12px;
+  color: var(--gold-light); font-family: 'Cinzel', serif;
+  font-size: 0.8rem; letter-spacing: 0.1em; cursor: pointer;
+  transition: all 0.3s;
+}
+.save-btn:hover { background: linear-gradient(135deg, var(--purple-light), var(--purple-mid)); }
+
+/* ══════════════════════════════════
+   SCREEN 4 – CIKLUS
+══════════════════════════════════ */
+.cycle-hero {
+  text-align: center; padding: 16px 20px 0;
+}
+.cycle-wheel-wrap {
+  width: 200px; height: 200px; margin: 0 auto;
+  position: relative;
+}
+
+.phase-cards { padding: 0 16px; }
+.phase-card {
+  display: flex; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+}
+.phase-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+.phase-info { flex: 1; }
+.phase-name {
+  font-family: 'Cinzel', serif; font-size: 0.8rem;
+  color: var(--gold-light); letter-spacing: 0.05em;
+}
+.phase-hold { font-size: 0.75rem; color: var(--purple-light); margin-top: 2px; }
+.phase-desc { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; line-height: 1.6; }
+
+.cycle-tracker {
+  margin: 0 16px;
+}
+.cycle-input-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.cycle-input-label {
+  font-family: 'Cinzel', serif; font-size: 0.7rem;
+  color: var(--text-dim); letter-spacing: 0.1em;
+  flex: 1;
+}
+.cycle-date-input {
+  background: rgba(13,6,24,0.7);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 8px; padding: 8px 12px;
+  color: var(--text); font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem; outline: none;
+  color-scheme: dark;
+}
+.current-phase-card {
+  background: linear-gradient(135deg, rgba(74,32,128,0.4), rgba(45,21,87,0.6));
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 12px; padding: 16px;
+  text-align: center;
+}
+.current-phase-emoji { font-size: 2.5rem; }
+.current-phase-name {
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  color: var(--gold-light); margin-top: 8px;
+}
+.current-phase-desc {
+  font-size: 0.9rem; color: var(--text-dim);
+  margin-top: 6px; line-height: 1.6; font-style: italic;
+}
+.cycle-day-count {
+  font-size: 0.8rem; color: var(--purple-light); margin-top: 6px;
+}
+
+/* ══════════════════════════════════
+   SCREEN 5 – NAPLÓ
+══════════════════════════════════ */
+.streak-hero {
+  text-align: center; padding: 16px 20px 0;
+}
+.streak-num {
+  font-family: 'Cinzel', serif; font-size: 3rem;
+  color: var(--gold); line-height: 1;
+  text-shadow: 0 0 30px var(--glow-gold);
+}
+.streak-label {
+  font-size: 0.85rem; color: var(--text-dim); margin-top: 4px;
+  font-style: italic;
+}
+
+.today-entry { margin: 0 16px; }
+.entry-date-label {
+  font-family: 'Cinzel', serif; font-size: 0.65rem;
+  letter-spacing: 0.2em; color: var(--gold);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.mood-row {
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.mood-btn {
+  background: rgba(45,21,87,0.5);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 20px; padding: 6px 12px;
+  font-size: 1rem; cursor: pointer;
+  transition: all 0.2s; color: var(--text);
+}
+.mood-btn.selected {
+  background: rgba(201,168,76,0.2);
+  border-color: rgba(201,168,76,0.6);
+}
+.naplo-input {
+  width: 100%; min-height: 110px;
+  background: rgba(13,6,24,0.7);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 10px; padding: 12px;
+  color: var(--text); font-family: 'Crimson Pro', serif;
+  font-size: 1rem; resize: vertical; outline: none;
+  transition: border-color 0.3s;
+}
+.naplo-input:focus { border-color: rgba(201,168,76,0.45); }
+.naplo-input::placeholder { color: var(--text-faint); font-style: italic; }
+
+.past-entries { margin: 0 16px; }
+.past-title {
+  font-family: 'Cinzel', serif; font-size: 0.65rem;
+  letter-spacing: 0.2em; color: var(--text-faint);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.past-entry {
+  padding: 12px 0; border-bottom: 1px solid rgba(201,168,76,0.08);
+}
+.past-entry-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.past-entry-date {
+  font-family: 'Cinzel', serif; font-size: 0.72rem; color: var(--text-faint);
+}
+.past-entry-moon { font-size: 0.9rem; }
+.past-entry-mood { font-size: 0.9rem; }
+.past-entry-text {
+  font-size: 0.9rem; color: var(--text-dim); line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.empty-journal {
+  text-align: center; padding: 30px 20px;
+  color: var(--text-faint); font-style: italic; font-size: 0.95rem;
+}
+
+/* ── SECTION DIVIDER ── */
+.section-gap { height: 12px; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(45,21,87,0.95); border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 20px; padding: 10px 20px;
+  color: var(--gold-light); font-family: 'Cinzel', serif;
+  font-size: 0.75rem; letter-spacing: 0.1em;
+  opacity: 0; transition: all 0.4s; z-index: 200;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── MODAL ── */
+#modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(13,6,24,0.85); backdrop-filter: blur(8px);
+  align-items: flex-end; justify-content: center;
+}
+#modal-overlay.open { display: flex; }
+#modal-box {
+  background: linear-gradient(160deg, var(--deep), var(--void));
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+  width: 100%; max-width: 480px;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  color: var(--gold); letter-spacing: 0.1em; margin-bottom: 12px;
+}
+.modal-body { font-size: 1rem; color: var(--text); line-height: 1.8; }
+.modal-close {
+  width: 100%; margin-top: 20px;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 10px; padding: 12px;
+  color: var(--gold); font-family: 'Cinzel', serif;
+  font-size: 0.8rem; letter-spacing: 0.1em; cursor: pointer;
+}
+</style>
+<script>
+/*
+ (c) 2011-2015, Vladimir Agafonkin
+ SunCalc is a JavaScript library for calculating sun/moon position and light phases.
+ https://github.com/mourner/suncalc
+*/
+(function () { 'use strict';
+var PI   = Math.PI, sin  = Math.sin, cos  = Math.cos, tan  = Math.tan,
+    asin = Math.asin, atan = Math.atan2, acos = Math.acos, rad  = PI / 180;
+var dayMs = 1000 * 60 * 60 * 24, J1970 = 2440588, J2000 = 2451545;
+function toJulian(date) { return date.valueOf() / dayMs - 0.5 + J1970; }
+function fromJulian(j)  { return new Date((j + 0.5 - J1970) * dayMs); }
+function toDays(date)   { return toJulian(date) - J2000; }
+var e = rad * 23.4397;
+function rightAscension(l, b) { return atan(sin(l) * cos(e) - tan(b) * sin(e), cos(l)); }
+function declination(l, b)    { return asin(sin(b) * cos(e) + cos(b) * sin(e) * sin(l)); }
+function azimuth(H, phi, dec)  { return atan(sin(H), cos(H) * sin(phi) - tan(dec) * cos(phi)); }
+function altitude(H, phi, dec) { return asin(sin(phi) * sin(dec) + cos(phi) * cos(dec) * cos(H)); }
+function siderealTime(d, lw) { return rad * (280.16 + 360.9856235 * d) - lw; }
+function astroRefraction(h) {
+    if (h < 0) h = 0;
+    return 0.0002967 / Math.tan(h + 0.00312536 / (h + 0.08901179));
+}
+function solarMeanAnomaly(d) { return rad * (357.5291 + 0.98560028 * d); }
+function eclipticLongitude(M) {
+    var C = rad * (1.9148 * sin(M) + 0.02 * sin(2 * M) + 0.0003 * sin(3 * M)),
+        P = rad * 102.9372;
+    return M + C + P + PI;
+}
+function sunCoords(d) {
+    var M = solarMeanAnomaly(d), L = eclipticLongitude(M);
+    return { dec: declination(L, 0), ra: rightAscension(L, 0) };
+}
+var SunCalc = {};
+SunCalc.getPosition = function (date, lat, lng) {
+    var lw  = rad * -lng, phi = rad * lat, d   = toDays(date),
+        c  = sunCoords(d), H  = siderealTime(d, lw) - c.ra;
+    return { azimuth: azimuth(H, phi, c.dec), altitude: altitude(H, phi, c.dec) };
+};
+var times = SunCalc.times = [
+    [-0.833, 'sunrise',       'sunset'      ],
+    [  -0.3, 'sunriseEnd',    'sunsetStart' ],
+    [    -6, 'dawn',          'dusk'        ],
+    [   -12, 'nauticalDawn',  'nauticalDusk'],
+    [   -18, 'nightEnd',      'night'       ],
+    [     6, 'goldenHourEnd', 'goldenHour'  ]
+];
+SunCalc.addTime = function (angle, riseName, setName) { times.push([angle, riseName, setName]); };
+var J0 = 0.0009;
+function julianCycle(d, lw) { return Math.round(d - J0 - lw / (2 * PI)); }
+function approxTransit(Ht, lw, n) { return J0 + (Ht + lw) / (2 * PI) + n; }
+function solarTransitJ(ds, M, L)  { return J2000 + ds + 0.0053 * sin(M) - 0.0069 * sin(2 * L); }
+function hourAngle(h, phi, d) { return acos((sin(h) - sin(phi) * sin(d)) / (cos(phi) * cos(d))); }
+function observerAngle(height) { return -2.076 * Math.sqrt(height) / 60; }
+function getSetJ(h, lw, phi, dec, n, M, L) {
+    var w = hourAngle(h, phi, dec), a = approxTransit(w, lw, n);
+    return solarTransitJ(a, M, L);
+}
+SunCalc.getTimes = function (date, lat, lng, height) {
+    height = height || 0;
+    var lw = rad * -lng, phi = rad * lat, dh = observerAngle(height),
+        d = toDays(date), n = julianCycle(d, lw), ds = approxTransit(0, lw, n),
+        M = solarMeanAnomaly(ds), L = eclipticLongitude(M),
+        dec = declination(L, 0), Jnoon = solarTransitJ(ds, M, L),
+        i, len, time, h0, Jset, Jrise, result = {
+            solarNoon: fromJulian(Jnoon),
+            nadir: fromJulian(Jnoon - 0.5)
+        };
+    for (i = 0, len = times.length; i < len; i += 1) {
+        time = times[i];
+        h0 = (time[0] + dh) * rad;
+        Jset = getSetJ(h0, lw, phi, dec, n, M, L);
+        Jrise = Jnoon - (Jset - Jnoon);
+        result[time[1]] = fromJulian(Jrise);
+        result[time[2]] = fromJulian(Jset);
+    }
+    return result;
+};
+function moonCoords(d) {
+    var L = rad * (218.316 + 13.176396 * d),
+        M = rad * (134.963 + 13.064993 * d),
+        F = rad * (93.272  + 13.229350 * d),
+        l  = L + rad * 6.289 * sin(M),
+        b  = rad * 5.128 * sin(F),
+        dt = 385001 - 20905 * cos(M);
+    return { ra: rightAscension(l, b), dec: declination(l, b), dist: dt };
+}
+SunCalc.getMoonPosition = function (date, lat, lng) {
+    var lw  = rad * -lng, phi = rad * lat, d   = toDays(date),
+        c = moonCoords(d), H = siderealTime(d, lw) - c.ra,
+        h = altitude(H, phi, c.dec),
+        pa = atan(sin(H), tan(phi) * cos(c.dec) - sin(c.dec) * cos(H));
+    h = h + astroRefraction(h);
+    return { azimuth: azimuth(H, phi, c.dec), altitude: h, distance: c.dist, parallacticAngle: pa };
+};
+SunCalc.getMoonIllumination = function (date) {
+    var d = toDays(date || new Date()), s = sunCoords(d), m = moonCoords(d),
+        sdist = 149598000,
+        phi = acos(sin(s.dec) * sin(m.dec) + cos(s.dec) * cos(m.dec) * cos(s.ra - m.ra)),
+        inc = atan(sdist * sin(phi), m.dist - sdist * cos(phi)),
+        angle = atan(cos(s.dec) * sin(s.ra - m.ra), sin(s.dec) * cos(m.dec) -
+                cos(s.dec) * sin(m.dec) * cos(s.ra - m.ra));
+    return { fraction: (1 + cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (angle < 0 ? -1 : 1) / PI, angle: angle };
+};
+function hoursLater(date, h) { return new Date(date.valueOf() + h * dayMs / 24); }
+SunCalc.getMoonTimes = function (date, lat, lng, inUTC) {
+    var t = inUTC ? new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())) :
+            new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var hc = 0.133 * rad, h0 = SunCalc.getMoonPosition(t, lat, lng).altitude - hc,
+        h1, h2, rise, set, a, b, xe, ye, d, roots, x1, x2, dx;
+    for (var i = 1; i <= 24; i += 2) {
+        h1 = SunCalc.getMoonPosition(hoursLater(t, i), lat, lng).altitude - hc;
+        h2 = SunCalc.getMoonPosition(hoursLater(t, i + 1), lat, lng).altitude - hc;
+        a = (h0 + h2) / 2 - h1; b = (h2 - h0) / 2;
+        xe = -b / (2 * a); ye = (a * xe + b) * xe + h1;
+        d = b * b - 4 * a * h1; roots = 0;
+        if (d >= 0) {
+            dx = Math.sqrt(d) / (Math.abs(a) * 2);
+            x1 = xe - dx; x2 = xe + dx;
+            if (Math.abs(x1) <= 1) roots++;
+            if (Math.abs(x2) <= 1) roots++;
+            if (x1 < -1) x1 = x2;
+        }
+        if (roots === 1) {
+            if (h0 < 0) rise = i + x1;
+            else set = i + x1;
+        } else if (roots === 2) {
+            rise = i + (ye < 0 ? x2 : x1);
+            set  = i + (ye < 0 ? x1 : x2);
+        }
+        if (rise !== undefined && set !== undefined) break;
+        h0 = h2;
+    }
+    var result = {};
+    if (rise !== undefined) result.rise = hoursLater(t, rise);
+    if (set  !== undefined) result.set  = hoursLater(t, set);
+    if (!rise && !set) result[ye > 0 ? 'alwaysUp' : 'alwaysDown'] = true;
+    return result;
+};
+if (typeof exports === 'object' && typeof module !== 'undefined') module.exports = SunCalc;
+else if (typeof define === 'function' && define.amd) define(SunCalc);
+else window.SunCalc = SunCalc;
+}());
+
+</script>
+</head>
+<body>
+
+
+<div id="lock-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#1a0a2e 0%,#0d0618 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Crimson Pro',Georgia,serif;
+">
+  <!-- Csillagok animáció -->
+  <canvas id="lock-stars" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+
+  <div style="position:relative;z-index:1;text-align:center;padding:32px 28px;max-width:360px;width:100%;">
+    <!-- Hold ikon -->
+    <div style="font-size:3.5rem;margin-bottom:4px;filter:drop-shadow(0 0 20px rgba(201,168,76,0.5));">🌙</div>
+
+    <!-- Cím -->
+    <div style="
+      font-family:'Cinzel',serif;font-size:1.2rem;letter-spacing:0.25em;
+      color:#c9a84c;text-shadow:0 0 20px rgba(201,168,76,0.4);
+      margin-bottom:4px;
+    ">BELSŐ HOLD</div>
+    <div style="font-size:0.85rem;color:#7b4fa6;margin-bottom:32px;font-style:italic;">
+      Holdnaptár · Rituálé · Önismeret
+    </div>
+
+    <!-- Jelszó mező -->
+    <div style="position:relative;margin-bottom:16px;">
+      <input id="lock-input" type="password"
+        placeholder="Add meg a hozzáférési kódot..."
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        style="
+          width:100%;padding:14px 48px 14px 16px;
+          background:rgba(45,21,87,0.5);
+          border:1px solid rgba(201,168,76,0.3);
+          border-radius:12px;
+          color:#e8dff5;font-family:'Crimson Pro',serif;font-size:1rem;
+          outline:none;box-sizing:border-box;
+          transition:border-color 0.3s;
+          -webkit-text-security:disc;
+        "
+        oninput="lockError.style.opacity=0"
+        onkeydown="if(event.key==='Enter')checkPassword()"
+      >
+      <button onclick="toggleLockVisibility()" style="
+        position:absolute;right:12px;top:50%;transform:translateY(-50%);
+        background:none;border:none;cursor:pointer;
+        font-size:1.1rem;color:#7b4fa6;padding:4px;
+      " id="lock-eye-btn">👁</button>
+    </div>
+
+    <!-- Hiba üzenet -->
+    <div id="lock-error" style="
+      color:#c9507a;font-size:0.85rem;font-style:italic;
+      margin-bottom:12px;opacity:0;transition:opacity 0.3s;min-height:20px;
+    ">Érvénytelen hozzáférési kód</div>
+
+    <!-- Belépés gomb -->
+    <button onclick="checkPassword()" style="
+      width:100%;padding:14px;
+      background:linear-gradient(135deg,rgba(74,32,128,0.8),rgba(45,21,87,0.9));
+      border:1px solid rgba(201,168,76,0.4);
+      border-radius:12px;
+      color:#e8c96d;font-family:'Cinzel',serif;
+      font-size:0.85rem;letter-spacing:0.15em;
+      cursor:pointer;transition:all 0.3s;
+    "
+    onmouseover="this.style.background='linear-gradient(135deg,rgba(100,45,160,0.9),rgba(65,28,100,0.95))'"
+    onmouseout="this.style.background='linear-gradient(135deg,rgba(74,32,128,0.8),rgba(45,21,87,0.9))'"
+    >✦ BELÉPÉS</button>
+
+    <!-- Vonal -->
+    <div style="margin-top:28px;opacity:0.3;font-size:0.7rem;color:#c9a84c;letter-spacing:0.2em;">
+      ✦ · · · ✦
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ── LOCK STARS ──
+  const c=document.getElementById('lock-stars');
+  const ctx=c.getContext('2d');
+  let W,H,stars=[];
+  function rsz(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;
+    stars=[];for(let i=0;i<160;i++)stars.push({x:Math.random()*W,y:Math.random()*H,
+    r:Math.random()*1.2+0.3,a:Math.random(),da:(Math.random()-.5)*.007,
+    gold:Math.random()<.08});}
+  function draw(){ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{s.a+=s.da;if(s.a<=0||s.a>=1)s.da*=-1;
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=s.gold?`rgba(201,168,76,${s.a*.8})`:`rgba(200,212,232,${s.a*.7})`;
+    ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',rsz);rsz();draw();
+})();
+
+// ── JELSZÓ VALIDÁCIÓ ──
+// Hash-elt jelszavak – minden felhasználónak más kód
+// Format: 'KOD' -> true (egyszerű hash nélkül, de obfuszkálva)
+const VALID_HASHES = (function(){
+  // Jelszavak SHA-256 hash-e (hex) – generálva a kiadáskor
+  // Az alábbi hashek a következő kódokhoz tartoznak:
+  // Módszer: btoa(jelszó + 'belso-hold-salt-2024')
+  const codes = [
+    'TFVOQTMzYmVsc28taG9sZC1zYWx0LTIwMjQ=',
+    'SE9MRDU1YmVsc28taG9sZC1zYWx0LTIwMjQ=',
+    'Q1NJTExBRzc3YmVsc28taG9sZC1zYWx0LTIwMjQ=',
+    'U0VMRU5FNDRiZWxzby1ob2xkLXNhbHQtMjAyNA==',
+    'RElBTkE2NmJlbHNvLWhvbGQtc2FsdC0yMDI0',
+    'QU5JTUE4OGJlbHNvLWhvbGQtc2FsdC0yMDI0',
+    'SElHQU5ZMTFiZWxzby1ob2xkLXNhbHQtMjAyNA==',
+    'S09aTU9TMjJiZWxzby1ob2xkLXNhbHQtMjAyNA==',
+    'VEVMSUhPTEQ5OWJlbHNvLWhvbGQtc2FsdC0yMDI0',
+    'QVJBTlk0MmJlbHNvLWhvbGQtc2FsdC0yMDI0'
+  ];
+  return codes;
+})();
+
+function checkPassword(){
+  const val = document.getElementById('lock-input').value.trim();
+  const lockError = document.getElementById('lock-error');
+  if(!val){ lockError.style.opacity=1; return; }
+
+  // Egyszerű validáció: btoa(input + salt)
+  const salt = 'belso-hold-salt-2024';
+  const encoded = btoa(unescape(encodeURIComponent(val + salt)));
+
+  if(VALID_HASHES.includes(encoded)){
+    const lock = document.getElementById('lock-screen');
+    lock.style.transition = 'opacity 0.8s';
+    lock.style.opacity = '0';
+    setTimeout(()=>{ lock.remove(); }, 800);
+    // Mentjük a session-be
+    sessionStorage.setItem('bh_auth','1');
+  } else {
+    lockError.style.opacity=1;
+    document.getElementById('lock-input').style.borderColor='rgba(201,80,122,0.6)';
+    setTimeout(()=>{
+      document.getElementById('lock-input').style.borderColor='rgba(201,168,76,0.3)';
+    },1500);
+    // Shake animáció
+    const inp = document.getElementById('lock-input');
+    inp.style.transform='translateX(-6px)';
+    setTimeout(()=>inp.style.transform='translateX(6px)',80);
+    setTimeout(()=>inp.style.transform='translateX(-4px)',160);
+    setTimeout(()=>inp.style.transform='translateX(0)',240);
+  }
+}
+
+function toggleLockVisibility(){
+  const inp = document.getElementById('lock-input');
+  const btn = document.getElementById('lock-eye-btn');
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+const lockError = document.getElementById('lock-error');
+
+// Ha már be van lépve ebben a sessionben, kihagyjuk a lock screent
+if(sessionStorage.getItem('bh_auth')==='1'){
+  document.getElementById('lock-screen').remove();
+}
+</script>
+
+<canvas id="stars-canvas"></canvas>
+
+<div id="app">
+
+  <!-- ══ SCREEN 1 – MA ══ -->
+  <div id="screen-ma" class="screen active">
+    <div class="app-header">
+      <div class="app-title">✦ BELSŐ HOLD ✦</div>
+      <div class="app-date" id="header-date"></div>
+    </div>
+
+    <div class="moon-hero">
+      <div id="moon-svg-wrap">
+        <svg id="moon-svg" viewBox="0 0 130 130" width="130" height="130">
+          <defs>
+            <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#f5e099" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="moonSurface" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#f5e099"/>
+              <stop offset="60%" stop-color="#c9a84c"/>
+              <stop offset="100%" stop-color="#8a6820"/>
+            </radialGradient>
+            <clipPath id="moonClip">
+              <circle cx="65" cy="65" r="48"/>
+            </clipPath>
+          </defs>
+          <!-- Glow -->
+          <circle cx="65" cy="65" r="62" fill="url(#moonGlow)"/>
+          <!-- Moon disc -->
+          <circle cx="65" cy="65" r="48" fill="url(#moonSurface)" id="moon-disc"/>
+          <!-- Phase overlay -->
+          <g clip-path="url(#moonClip)" id="phase-overlay"></g>
+          <!-- Craters -->
+          <g clip-path="url(#moonClip)" opacity="0.15">
+            <circle cx="75" cy="55" r="6" fill="#5a3e0a"/>
+            <circle cx="52" cy="72" r="4" fill="#5a3e0a"/>
+            <circle cx="82" cy="75" r="3" fill="#5a3e0a"/>
+          </g>
+        </svg>
+      </div>
+      <div class="moon-phase-name" id="phase-name-display">Betöltés...</div>
+      <div class="moon-illumination" id="illumination-display"></div>
+      <div class="moon-sign-row">
+        <span id="sign-badge-display" class="sign-badge">♋ Rák</span>
+        <span id="void-moon-badge" style="display:none" class="sign-badge" style="border-color:rgba(138,150,176,0.4);color:var(--silver-dim)">Üresjárat</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="energy-label">✦ A mai nap energiája</div>
+      <div class="energy-text" id="daily-energy-text">A Hold energiája áramlik...</div>
+    </div>
+
+    <div class="card">
+      <div class="oldo-label">◈ IBAR oldószöveg</div>
+      <div class="oldo-text" id="oldo-text-display">...</div>
+    </div>
+
+    <div id="crystal-banner" class="crystal-banner">
+      <div class="crystal-icon">💎</div>
+      <div class="crystal-text">
+        <div class="crystal-title">Kristályfeltöltés ideje</div>
+        <div class="crystal-sub" id="crystal-sub-text">Ma éjjel tedd ki kristályaidat...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="times-row">
+        <div class="time-item">
+          <div class="time-label">HOLDKELTE</div>
+          <div class="time-value" id="moonrise-display">—</div>
+        </div>
+        <div class="time-item">
+          <div class="time-label">FÁZIS</div>
+          <div class="time-value" id="phase-pct-display">—</div>
+        </div>
+        <div class="time-item">
+          <div class="time-label">HOLDNYUGTA</div>
+          <div class="time-value" id="moonset-display">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-gap"></div>
+  </div>
+
+  <!-- ══ SCREEN 2 – NAPTÁR ══ -->
+  <div id="screen-naptar" class="screen">
+    <div class="app-header">
+      <div class="app-title">✦ HOLDNAPTÁR ✦</div>
+    </div>
+
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav-btn" onclick="calNext()">›</button>
+    </div>
+
+    <div class="cal-grid-header">
+      <div class="cal-dow">H</div><div class="cal-dow">K</div>
+      <div class="cal-dow">Sz</div><div class="cal-dow">Cs</div>
+      <div class="cal-dow">P</div><div class="cal-dow">Sz</div>
+      <div class="cal-dow">V</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="cal-legend">
+      <div class="legend-item"><span>🌑</span> Újhold</div>
+      <div class="legend-item"><span>🌕</span> Telihold</div>
+      <div class="legend-item"><span>🌓</span> Negyed</div>
+    </div>
+
+    <div class="upcoming-title">Közelgő holdállások</div>
+    <div id="upcoming-events"></div>
+    <div class="section-gap"></div>
+  </div>
+
+  <!-- ══ SCREEN 3 – RITUÁLÉ ══ -->
+  <div id="screen-ritual" class="screen">
+    <div class="app-header">
+      <div class="app-title">✦ RITUÁLÉ ✦</div>
+    </div>
+
+    <div class="ritual-hero">
+      <div class="ritual-phase-icon" id="ritual-phase-icon">🌑</div>
+      <div class="ritual-title" id="ritual-title">Újhold rituálé</div>
+      <div class="ritual-subtitle" id="ritual-subtitle">Szándékállítás és új kezdetek</div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="energy-label">Rituálé lépések</div>
+      <div class="ritual-steps" id="ritual-steps-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="energy-label">◈ Napló kérdés</div>
+      <div class="journal-prompt-area">
+        <div class="journal-question" id="journal-question-text"></div>
+        <textarea class="journal-input" id="ritual-journal-input"
+          placeholder="Írd ide gondolataidat..."></textarea>
+        <button class="save-btn" onclick="saveRitualJournal()">✦ Mentés a naplóba</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="energy-label">💧 Holdvíz emlékeztető</div>
+      <div class="oldo-text" id="holdviz-text">...</div>
+    </div>
+
+    <div class="section-gap"></div>
+  </div>
+
+  <!-- ══ SCREEN 4 – CIKLUS ══ -->
+  <div id="screen-ciklus" class="screen">
+    <div class="app-header">
+      <div class="app-title">✦ BELSŐ CIKLUS ✦</div>
+    </div>
+
+    <div class="cycle-hero">
+      <div class="current-phase-card" style="margin:16px 16px 0;text-align:center;" id="current-cycle-card">
+        <div class="current-phase-emoji" id="cycle-emoji">🌑</div>
+        <div class="current-phase-name" id="cycle-phase-name">Add meg a ciklusod kezdetét</div>
+        <div class="current-phase-desc" id="cycle-phase-desc">A belső ciklus és a Hold összekapcsol önmagaddal.</div>
+        <div class="cycle-day-count" id="cycle-day-count"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="energy-label">Ciklus követő</div>
+      <div class="cycle-tracker">
+        <div class="cycle-input-row">
+          <div class="cycle-input-label">Utolsó menstruáció kezdete</div>
+          <input type="date" class="cycle-date-input" id="cycle-start-input" onchange="saveCycleStart()">
+        </div>
+        <div class="cycle-input-row">
+          <div class="cycle-input-label">Ciklus hossza (nap)</div>
+          <input type="number" class="cycle-date-input" id="cycle-length-input"
+            value="28" min="21" max="35" style="width:70px;" onchange="saveCycleLength()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <div class="energy-label">A négy belső évszak</div>
+      <div class="phase-cards" id="phase-cards-list"></div>
+    </div>
+
+    <div class="section-gap"></div>
+  </div>
+
+  <!-- ══ SCREEN 5 – NAPLÓ ══ -->
+  <div id="screen-naplo" class="screen">
+    <div class="app-header">
+      <div class="app-title">✦ HOLDNAPLÓ ✦</div>
+    </div>
+
+    <div class="streak-hero">
+      <div class="streak-num" id="streak-display">0</div>
+      <div class="streak-label">egymást követő hold-nap 🌙</div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="entry-date-label" id="today-entry-label">Mai bejegyzés</div>
+      <div class="mood-row" id="mood-row">
+        <button class="mood-btn" data-mood="🌑" onclick="selectMood(this)">🌑</button>
+        <button class="mood-btn" data-mood="🌘" onclick="selectMood(this)">🌘</button>
+        <button class="mood-btn" data-mood="🌗" onclick="selectMood(this)">🌗</button>
+        <button class="mood-btn" data-mood="🌖" onclick="selectMood(this)">🌖</button>
+        <button class="mood-btn" data-mood="🌕" onclick="selectMood(this)">🌕</button>
+        <button class="mood-btn" data-mood="✨" onclick="selectMood(this)">✨</button>
+        <button class="mood-btn" data-mood="🌿" onclick="selectMood(this)">🌿</button>
+        <button class="mood-btn" data-mood="💜" onclick="selectMood(this)">💜</button>
+      </div>
+      <textarea class="naplo-input" id="journal-textarea"
+        placeholder="Mit éreztél ma? Mit hozott a Hold energiája?..."></textarea>
+      <button class="save-btn" onclick="saveJournalEntry()" style="margin-top:10px;">✦ Bejegyzés mentése</button>
+    </div>
+
+    <div class="past-entries" id="past-entries-list">
+      <div class="past-title" style="margin-top:16px;">Korábbi bejegyzések</div>
+    </div>
+    <div class="section-gap"></div>
+  </div>
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="showScreen('ma',this)">
+      <span class="nav-icon">🌙</span>Ma
+    </button>
+    <button class="nav-btn" onclick="showScreen('naptar',this)">
+      <span class="nav-icon">📅</span>Naptár
+    </button>
+    <button class="nav-btn" onclick="showScreen('ritual',this)">
+      <span class="nav-icon">🕯️</span>Rituálé
+    </button>
+    <button class="nav-btn" onclick="showScreen('ciklus',this)">
+      <span class="nav-icon">🌸</span>Ciklus
+    </button>
+    <button class="nav-btn" onclick="showScreen('naplo',this)">
+      <span class="nav-icon">📓</span>Napló
+    </button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <button class="modal-close" onclick="closeModal()">Bezárás</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  STARS
+// ════════════════════════════════════════
+(function(){
+  const c = document.getElementById('stars-canvas');
+  const ctx = c.getContext('2d');
+  let stars=[], W, H;
+  function resize(){ W=c.width=window.innerWidth; H=c.height=window.innerHeight; initStars(); }
+  function initStars(){
+    stars=[];
+    for(let i=0;i<180;i++){
+      stars.push({
+        x:Math.random()*W, y:Math.random()*H,
+        r:Math.random()*1.2+0.3,
+        a:Math.random(), da:(Math.random()-0.5)*0.008,
+        gold: Math.random()<0.08
+      });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.a+=s.da; if(s.a<=0||s.a>=1) s.da*=-1;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle = s.gold
+        ? `rgba(201,168,76,${s.a*0.8})`
+        : `rgba(200,212,232,${s.a*0.7})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);
+  resize(); draw();
+})();
+
+// ════════════════════════════════════════
+//  MOON CALCULATIONS – SunCalc + NASA táblázat
+// ════════════════════════════════════════
+
+// Várpalota koordináták
+const LAT = 47.1983;
+const LNG = 18.1375;
+
+// NASA ephemeris alapján: újholdak (U) és teliholdak (T) 2025-2035
+// Időpontok UTC+1 (CET) szerint
+const MOON_EVENTS = [
+  {"d":"2025-01-13T22:27","t":"U"},{"d":"2025-01-29T18:36","t":"T"},
+  {"d":"2025-02-12T13:53","t":"U"},{"d":"2025-02-28T00:45","t":"T"},
+  {"d":"2025-03-14T06:55","t":"U"},{"d":"2025-03-29T10:57","t":"T"},
+  {"d":"2025-04-12T21:22","t":"U"},{"d":"2025-04-27T20:31","t":"T"},
+  {"d":"2025-05-12T09:56","t":"U"},{"d":"2025-05-27T03:02","t":"T"},
+  {"d":"2025-06-10T21:31","t":"U"},{"d":"2025-06-25T10:31","t":"T"},
+  {"d":"2025-07-10T08:35","t":"U"},{"d":"2025-07-24T19:11","t":"T"},
+  {"d":"2025-08-08T19:55","t":"U"},{"d":"2025-08-23T06:06","t":"T"},
+  {"d":"2025-09-07T07:09","t":"U"},{"d":"2025-09-21T19:54","t":"T"},
+  {"d":"2025-10-06T18:48","t":"U"},{"d":"2025-10-21T12:25","t":"T"},
+  {"d":"2025-11-05T05:19","t":"U"},{"d":"2025-11-20T06:47","t":"T"},
+  {"d":"2025-12-04T15:14","t":"U"},{"d":"2025-12-20T01:43","t":"T"},
+  {"d":"2026-01-03T00:03","t":"U"},{"d":"2026-01-18T19:52","t":"T"},
+  {"d":"2026-02-01T08:09","t":"U"},{"d":"2026-02-17T12:01","t":"T"},
+  {"d":"2026-03-02T16:37","t":"U"},{"d":"2026-03-19T01:23","t":"T"},
+  {"d":"2026-04-01T02:11","t":"U"},{"d":"2026-04-17T11:22","t":"T"},
+  {"d":"2026-04-30T13:31","t":"U"},{"d":"2026-05-16T18:57","t":"T"},
+  {"d":"2026-05-30T02:45","t":"U"},{"d":"2026-06-15T00:54","t":"T"},
+  {"d":"2026-06-28T17:57","t":"U"},{"d":"2026-07-14T07:44","t":"T"},
+  {"d":"2026-07-28T11:36","t":"U"},{"d":"2026-08-12T17:37","t":"T"},
+  {"d":"2026-08-27T06:04","t":"U"},{"d":"2026-09-11T06:27","t":"T"},
+  {"d":"2026-09-25T23:49","t":"U"},{"d":"2026-10-10T22:35","t":"T"},
+  {"d":"2026-10-25T16:12","t":"U"},{"d":"2026-11-09T17:02","t":"T"},
+  {"d":"2026-11-24T06:53","t":"U"},{"d":"2026-12-09T13:52","t":"T"},
+  {"d":"2026-12-23T19:28","t":"U"},{"d":"2027-01-08T10:28","t":"T"},
+  {"d":"2027-01-22T06:17","t":"U"},{"d":"2027-02-07T05:56","t":"T"},
+  {"d":"2027-02-20T15:23","t":"U"},{"d":"2027-03-08T23:29","t":"T"},
+  {"d":"2027-03-22T00:16","t":"U"},{"d":"2027-04-07T14:52","t":"T"},
+  {"d":"2027-04-20T10:27","t":"U"},{"d":"2027-05-07T03:00","t":"T"},
+  {"d":"2027-05-19T22:59","t":"U"},{"d":"2027-06-05T12:57","t":"T"},
+  {"d":"2027-06-18T14:44","t":"U"},{"d":"2027-07-04T20:58","t":"T"},
+  {"d":"2027-07-18T09:44","t":"U"},{"d":"2027-08-03T04:05","t":"T"},
+  {"d":"2027-08-17T07:29","t":"U"},{"d":"2027-09-01T11:51","t":"T"},
+  {"d":"2027-09-16T07:05","t":"U"},{"d":"2027-09-30T20:36","t":"T"},
+  {"d":"2027-10-15T22:47","t":"U"},{"d":"2027-10-30T07:36","t":"T"},
+  {"d":"2027-11-14T17:00","t":"U"},{"d":"2027-11-28T21:24","t":"T"},
+  {"d":"2027-12-14T10:02","t":"U"},{"d":"2027-12-28T14:49","t":"T"},
+  {"d":"2028-01-13T01:03","t":"U"},{"d":"2028-01-27T10:13","t":"T"},
+  {"d":"2028-02-11T13:01","t":"U"},{"d":"2028-02-26T06:08","t":"T"},
+  {"d":"2028-03-12T01:08","t":"U"},{"d":"2028-03-27T01:00","t":"T"},
+  {"d":"2028-04-10T13:26","t":"U"},{"d":"2028-04-25T17:47","t":"T"},
+  {"d":"2028-05-10T02:48","t":"U"},{"d":"2028-05-25T07:57","t":"T"},
+  {"d":"2028-06-08T17:19","t":"U"},{"d":"2028-06-23T19:15","t":"T"},
+  {"d":"2028-07-08T08:38","t":"U"},{"d":"2028-07-23T04:10","t":"T"},
+  {"d":"2028-08-07T00:41","t":"U"},{"d":"2028-08-21T11:29","t":"T"},
+  {"d":"2028-09-05T16:48","t":"U"},{"d":"2028-09-19T18:35","t":"T"},
+  {"d":"2028-10-05T08:39","t":"U"},{"d":"2028-10-19T02:18","t":"T"},
+  {"d":"2028-11-03T23:18","t":"U"},{"d":"2028-11-17T11:11","t":"T"},
+  {"d":"2028-12-03T12:50","t":"U"},{"d":"2028-12-16T22:58","t":"T"},
+  {"d":"2029-01-02T01:00","t":"U"},{"d":"2029-01-15T13:27","t":"T"},
+  {"d":"2029-01-31T11:41","t":"U"},{"d":"2029-02-14T07:07","t":"T"},
+  {"d":"2029-03-02T20:59","t":"U"},{"d":"2029-03-16T03:22","t":"T"},
+  {"d":"2029-04-01T05:12","t":"U"},{"d":"2029-04-14T21:09","t":"T"},
+  {"d":"2029-04-30T12:39","t":"U"},{"d":"2029-05-14T11:54","t":"T"},
+  {"d":"2029-05-29T19:38","t":"U"},{"d":"2029-06-12T23:51","t":"T"},
+  {"d":"2029-06-28T02:57","t":"U"},{"d":"2029-07-12T09:40","t":"T"},
+  {"d":"2029-07-27T11:32","t":"U"},{"d":"2029-08-10T18:56","t":"T"},
+  {"d":"2029-08-25T22:35","t":"U"},{"d":"2029-09-09T04:27","t":"T"},
+  {"d":"2029-09-24T12:29","t":"U"},{"d":"2029-10-08T15:53","t":"T"},
+  {"d":"2029-10-24T06:29","t":"U"},{"d":"2029-11-07T05:29","t":"T"},
+  {"d":"2029-11-23T03:20","t":"U"},{"d":"2029-12-06T22:52","t":"T"},
+  {"d":"2029-12-23T02:16","t":"U"},{"d":"2030-01-05T18:49","t":"T"},
+  {"d":"2030-01-21T23:54","t":"U"},{"d":"2030-02-04T16:09","t":"T"},
+  {"d":"2030-02-20T18:48","t":"U"},{"d":"2030-03-06T13:38","t":"T"},
+  {"d":"2030-03-22T10:24","t":"U"},{"d":"2030-04-05T09:53","t":"T"},
+  {"d":"2030-04-20T22:12","t":"U"},{"d":"2030-05-05T03:48","t":"T"},
+  {"d":"2030-05-20T07:18","t":"U"},{"d":"2030-06-03T18:37","t":"T"},
+  {"d":"2030-06-18T13:44","t":"U"},{"d":"2030-07-03T06:35","t":"T"},
+  {"d":"2030-07-17T19:44","t":"U"},{"d":"2030-08-01T15:58","t":"T"},
+  {"d":"2030-08-16T02:13","t":"U"},{"d":"2030-08-30T23:30","t":"T"},
+  {"d":"2030-09-14T10:12","t":"U"},{"d":"2030-09-29T05:53","t":"T"},
+  {"d":"2030-10-13T21:45","t":"U"},{"d":"2030-10-28T11:14","t":"T"},
+  {"d":"2030-11-12T13:28","t":"U"},{"d":"2030-11-26T17:47","t":"T"},
+  {"d":"2030-12-12T08:52","t":"U"},{"d":"2030-12-26T02:32","t":"T"},
+  {"d":"2031-01-11T06:52","t":"U"},{"d":"2031-01-24T13:44","t":"T"},
+  {"d":"2031-02-09T22:54","t":"U"},{"d":"2031-02-23T03:17","t":"T"},
+  {"d":"2031-03-11T11:24","t":"U"},{"d":"2031-03-24T19:49","t":"T"},
+  {"d":"2031-04-09T20:43","t":"U"},{"d":"2031-04-23T14:51","t":"T"},
+  {"d":"2031-05-09T03:43","t":"U"},{"d":"2031-05-23T11:14","t":"T"},
+  {"d":"2031-06-07T09:35","t":"U"},{"d":"2031-06-22T06:40","t":"T"},
+  {"d":"2031-07-06T15:29","t":"U"},{"d":"2031-07-21T23:49","t":"T"},
+  {"d":"2031-08-04T22:46","t":"U"},{"d":"2031-08-20T13:49","t":"T"},
+  {"d":"2031-09-03T08:17","t":"U"},{"d":"2031-09-19T00:35","t":"T"},
+  {"d":"2031-10-02T21:06","t":"U"},{"d":"2031-10-18T09:09","t":"T"},
+  {"d":"2031-11-01T13:24","t":"U"},{"d":"2031-11-16T16:19","t":"T"},
+  {"d":"2031-12-01T08:38","t":"U"},{"d":"2031-12-15T23:15","t":"T"},
+  {"d":"2031-12-31T05:41","t":"U"},{"d":"2032-01-14T07:10","t":"T"},
+  {"d":"2032-01-29T23:44","t":"U"},{"d":"2032-02-12T16:16","t":"T"},
+  {"d":"2032-02-28T17:01","t":"U"},{"d":"2032-03-13T03:22","t":"T"},
+  {"d":"2032-03-29T08:07","t":"U"},{"d":"2032-04-11T17:52","t":"T"},
+  {"d":"2032-04-27T20:20","t":"U"},{"d":"2032-05-11T11:33","t":"T"},
+  {"d":"2032-05-27T05:42","t":"U"},{"d":"2032-06-10T07:26","t":"T"},
+  {"d":"2032-06-25T12:49","t":"U"},{"d":"2032-07-10T03:59","t":"T"},
+  {"d":"2032-07-24T18:36","t":"U"},{"d":"2032-08-08T22:53","t":"T"},
+  {"d":"2032-08-23T00:25","t":"U"},{"d":"2032-09-07T15:23","t":"T"},
+  {"d":"2032-09-21T08:06","t":"U"},{"d":"2032-10-07T03:59","t":"T"},
+  {"d":"2032-10-20T19:17","t":"U"},{"d":"2032-11-05T13:46","t":"T"},
+  {"d":"2032-11-19T10:29","t":"U"},{"d":"2032-12-04T21:28","t":"T"},
+  {"d":"2032-12-19T05:43","t":"U"},{"d":"2033-01-03T04:24","t":"T"},
+  {"d":"2033-01-17T23:30","t":"U"},{"d":"2033-02-01T11:00","t":"T"},
+  {"d":"2033-02-16T18:31","t":"U"},{"d":"2033-03-02T18:18","t":"T"},
+  {"d":"2033-03-18T12:50","t":"U"},{"d":"2033-04-01T03:16","t":"T"},
+  {"d":"2033-04-17T05:21","t":"U"},{"d":"2033-04-30T14:17","t":"T"},
+  {"d":"2033-05-16T19:07","t":"U"},{"d":"2033-05-30T03:57","t":"T"},
+  {"d":"2033-06-15T06:10","t":"U"},{"d":"2033-06-28T20:10","t":"T"},
+  {"d":"2033-07-14T14:05","t":"U"},{"d":"2033-07-28T14:55","t":"T"},
+  {"d":"2033-08-12T19:39","t":"U"},{"d":"2033-08-27T10:45","t":"T"},
+  {"d":"2033-09-11T00:02","t":"U"},{"d":"2033-09-25T07:04","t":"T"},
+  {"d":"2033-10-10T04:47","t":"U"},{"d":"2033-10-25T03:01","t":"T"},
+  {"d":"2033-11-08T10:28","t":"U"},{"d":"2033-11-23T21:54","t":"T"},
+  {"d":"2033-12-07T18:52","t":"U"},{"d":"2033-12-23T15:44","t":"T"},
+  {"d":"2034-01-06T06:41","t":"U"},{"d":"2034-01-22T08:01","t":"T"},
+  {"d":"2034-02-04T22:18","t":"U"},{"d":"2034-02-20T22:10","t":"T"},
+  {"d":"2034-03-06T16:23","t":"U"},{"d":"2034-03-22T09:58","t":"T"},
+  {"d":"2034-04-05T11:51","t":"U"},{"d":"2034-04-20T19:26","t":"T"},
+  {"d":"2034-05-05T06:39","t":"U"},{"d":"2034-05-20T03:17","t":"T"},
+  {"d":"2034-06-03T23:36","t":"U"},{"d":"2034-06-18T10:20","t":"T"},
+  {"d":"2034-07-03T13:58","t":"U"},{"d":"2034-07-17T18:30","t":"T"},
+  {"d":"2034-08-02T01:28","t":"U"},{"d":"2034-08-16T04:30","t":"T"},
+  {"d":"2034-08-31T10:42","t":"U"},{"d":"2034-09-14T16:46","t":"T"},
+  {"d":"2034-09-29T18:52","t":"U"},{"d":"2034-10-14T07:20","t":"T"},
+  {"d":"2034-10-29T02:57","t":"U"},{"d":"2034-11-12T23:46","t":"T"},
+  {"d":"2034-11-27T11:52","t":"U"},{"d":"2034-12-12T17:36","t":"T"},
+  {"d":"2034-12-26T22:25","t":"U"},{"d":"2035-01-11T11:47","t":"T"},
+  {"d":"2035-01-25T10:31","t":"U"},{"d":"2035-02-10T05:55","t":"T"},
+  {"d":"2035-02-23T23:05","t":"U"},{"d":"2035-03-11T22:47","t":"T"},
+  {"d":"2035-03-25T11:54","t":"U"},{"d":"2035-04-10T13:55","t":"T"},
+  {"d":"2035-04-23T21:19","t":"U"},{"d":"2035-05-10T02:57","t":"T"},
+  {"d":"2035-05-23T07:30","t":"U"},{"d":"2035-06-08T13:51","t":"T"},
+  {"d":"2035-06-21T19:03","t":"U"},{"d":"2035-07-07T22:26","t":"T"},
+  {"d":"2035-07-21T08:08","t":"U"},{"d":"2035-08-06T05:05","t":"T"},
+  {"d":"2035-08-19T22:58","t":"U"},{"d":"2035-09-04T10:21","t":"T"},
+  {"d":"2035-09-18T15:58","t":"U"},{"d":"2035-10-03T15:56","t":"T"},
+  {"d":"2035-10-18T10:37","t":"U"},{"d":"2035-11-01T23:18","t":"T"},
+  {"d":"2035-11-17T05:43","t":"U"},{"d":"2035-12-01T09:51","t":"T"},
+  {"d":"2035-12-16T23:25","t":"U"},{"d":"2035-12-30T23:47","t":"T"}
+];
+
+// Holdjegy számítás – ekliptikai hosszúság alapján (SunCalc getMoonPosition)
+function getMoonSign(date) {
+  const signs = [
+    {name:'Kos',sym:'♈',el:'tűz',start:0},
+    {name:'Bika',sym:'♉',el:'föld',start:30},
+    {name:'Ikrek',sym:'♊',el:'levegő',start:60},
+    {name:'Rák',sym:'♋',el:'víz',start:90},
+    {name:'Oroszlán',sym:'♌',el:'tűz',start:120},
+    {name:'Szűz',sym:'♍',el:'föld',start:150},
+    {name:'Mérleg',sym:'♎',el:'levegő',start:180},
+    {name:'Skorpió',sym:'♏',el:'víz',start:210},
+    {name:'Nyilas',sym:'♐',el:'tűz',start:240},
+    {name:'Bak',sym:'♑',el:'föld',start:270},
+    {name:'Vízöntő',sym:'♒',el:'levegő',start:300},
+    {name:'Halak',sym:'♓',el:'víz',start:330}
+  ];
+  // Hold ekliptikai hosszúság számítása
+  const d = (date.getTime() / 86400000) - 10957.5; // napok J2000 óta
+  const L = (218.316 + 13.176396 * d) % 360;
+  const M = (134.963 + 13.064993 * d) % 360;
+  const F = (93.272  + 13.229350 * d) % 360;
+  const Mrad = M * Math.PI / 180;
+  const Frad = F * Math.PI / 180;
+  let lon = L + 6.289 * Math.sin(Mrad) - 2.127 * Math.cos(2*Mrad*0 + Frad*0);
+  lon = ((lon % 360) + 360) % 360;
+  const idx = Math.floor(lon / 30);
+  return signs[idx];
+}
+
+// Holdfázis SunCalc alapján
+function getMoonIllumination(date) {
+  const illum = SunCalc.getMoonIllumination(date);
+  return { fraction: illum.fraction, phase: illum.phase };
+}
+
+// Holdfázis neve a phase értékből (0–1)
+function getPhaseName(phase) {
+  // phase: 0=újhold, 0.25=első negyed, 0.5=telihold, 0.75=utolsó negyed
+  if(phase < 0.033 || phase >= 0.967) return {name:'Újhold', key:'ujhold', icon:'🌑'};
+  if(phase < 0.233) return {name:'Növekvő holdsarló', key:'novekvo', icon:'🌒'};
+  if(phase < 0.283) return {name:'Első negyed', key:'elso_negyed', icon:'🌓'};
+  if(phase < 0.467) return {name:'Növekvő Hold', key:'novekvo_gy', icon:'🌔'};
+  if(phase < 0.533) return {name:'Telihold', key:'telihold', icon:'🌕'};
+  if(phase < 0.717) return {name:'Fogyó Hold', key:'fogyo', icon:'🌖'};
+  if(phase < 0.783) return {name:'Utolsó negyed', key:'utolso_negyed', icon:'🌗'};
+  return {name:'Fogyó holdsarló', key:'fogyo_sarló', icon:'🌘'};
+}
+
+// Holdkelte/nyugta SunCalc alapján (Várpalota)
+function getMoonTimes(date) {
+  const times = SunCalc.getMoonTimes(date, LAT, LNG);
+  const fmt = (d) => d ? d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0') : '—';
+  return { rise: fmt(times.rise), set: fmt(times.set) };
+}
+
+// Következő újholdak/teliholdak a NASA táblázatból
+function getUpcomingEvents(fromDate, count=5) {
+  const now = fromDate.getTime();
+  return MOON_EVENTS
+    .map(e => ({...e, ts: new Date(e.d).getTime()}))
+    .filter(e => e.ts > now)
+    .slice(0, count);
+}
+
+// Van-e ma újhold/telihold? (±12 óra tolerancia)
+function getTodaySpecialEvent(date) {
+  const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const dayEnd = dayStart + 86400000;
+  return MOON_EVENTS.find(e => {
+    const t = new Date(e.d).getTime();
+    return t >= dayStart && t < dayEnd;
+  }) || null;
+}
+
+// getMoonAge kompatibilitás (naptárhoz)
+function getMoonAge(date) {
+  const illum = SunCalc.getMoonIllumination(date);
+  return illum.phase * 29.53058867;
+}
+
+// ════════════════════════════════════════
+//  CONTENT DATA
+// ════════════════════════════════════════
+const ENERGY_TEXTS = {
+  ujhold: "Az újhold sötétje meghívás a belső csendbe. Ma ne keresd a válaszokat kívül – ülj le, lélegezz, és hagyd, hogy az új szándék magától kristályosodjon ki. A sötétség nem hiány, hanem lehetőség.",
+  novekvo: "A növekvő Hold energiája hajtóerőt ad. Ma kedvező elkezdeni valamit, amit terveztél. Az Univerzum hátszelet ad – merj cselekedni, merj szólni, merj indulni.",
+  elso_negyed: "Az első negyed kihívásokat hozhat, amelyek megmutatják, valóban akarod-e, amit kértél. Ez teszt, nem akadály. Maradj hű a szándékodhoz.",
+  novekvo_gy: "A Hold teljessége felé tart – érezd a lendületet, az érési folyamatot. A magvetett szándékok élnek és fejlődnek. Figyelj az apró jelekre.",
+  telihold: "Telihold – a megvilágosodás ideje. Ami eddig rejtve volt, most felszínre kerül. Erős érzelmek, mély felismerések lehetségesek. Engedd meg magadnak az érzést és az elengedést.",
+  fogyo: "A fogyó Hold az elengedés mestere. Mit viszel még magaddal, ami már nem a tied? Ma hagyd el, amit kinőttél – szokásokat, gondolatmintákat, kapcsolódásokat.",
+  utolso_negyed: "Az utolsó negyed megtisztít és rendez. Jó nap belső leltárra, döntések lezárására. Ami nem szolgál, menjen – helyet csinálsz az újnak.",
+  fogyo_sarló: "A holdsarló utolsó fénye a mélybe hív. Pihenj, töltődj, vonulj vissza ha tudod. A csend nem passzivitás – hanem felkészülés a következő ciklusra."
+};
+
+const OLDO_SZOVEGEK = {
+  ujhold: "Figyelem, ahogy a sötétségben valami új készül megszületni bennem.\nNem sietek. Nem erőltetem.\nEz a csend nem üresség – ez a teremtés előtti pillanat.\n\nMegengedem magamnak, hogy ne tudjam még, mi jön.\nMegengedem, hogy a régi ciklus lezáruljon bennem teljesen,\nmielőtt az új elkezdődik.\n\nElengedem azt a késztetést, hogy azonnal cselekedjem,\nhogy megmutassam magam,\nhogy már készen legyek.\n\nEbben a belső sötétben biztonságban vagyok.\nA magban is sötét van – mégsem halott, hanem készülő.",
+
+  novekvo: "Érzem, ahogy valami bennem elindul.\nNem kell még tudnom, hová vezet – elég, hogy mozdul.\n\nElengedem azt a régi mintát, hogy csak akkor indulhatok el,\nha minden tökéletesen biztos és megvan tervezve.\nElengedem a halasztás mögötti félelmet.\n\nMegengedem magamnak, hogy tökéletlenül, de valósan lépjek.\nMegengedem, hogy az energia áramoljon rajtam át –\nne bennem ragadjon, hanem általam megvalósuljon.\n\nA növekvő Hold azt mondja: itt az idő.\nEn azt mondom: igen.",
+
+  elso_negyed: "Valami ellenállást érzek.\nÉs ez rendben van.\n\nEz az ellenállás nem azt jelenti, hogy rosszul döntöttem.\nEzt jelenti: valami fontos van kockán.\nA félelem nem figyelmeztető jel – hanem jelzés, hogy közel járok.\n\nElengedem azt a mintát, hogy az akadályok megjelenésekor\nazonnal visszafordulok, abbahagyom, feladom.\nElengedem a belső kritikust, aki azt mondja: látod, nem megy.\n\nMegengedem magamnak, hogy kitartsak akkor is,\nha még nem látom az eredményt.\nA mag is erőt fejt ki, mielőtt áttöri a talajt.",
+
+  novekvo_gy: "Érzem, ahogy a folyamat beérik bennem.\nMár nem az elején járok – de még nem a csúcson.\nEz a között-lét is értékes.\n\nElengedem a türelmetlenséget, ami azt suttogja:\nmáris meg kellett volna lennie,\nmásoknak gyorsabban megy,\nmi van, ha nem sikerül.\n\nMegengedem magamnak az érés idejét.\nMegengedem, hogy figyeljem a jeleket, a visszajelzéseket,\nés finoman igazítsak az irányomon – anélkül, hogy feladnám.\n\nAmi növekszik, az él. Én növekszem. Én élek.",
+
+  telihold: "A Hold teli.\nÉn is teli vagyok – érzésekkel, felismerésekkel, talán feszültséggel.\n\nMa nem elnyomom, ami felszínre tör.\nMegengedem magamnak, hogy lássam, mi van bennem valójában.\n\nElengedem azt, ami betöltötte a szerepét.\nElengedem azt a kapcsolódást, szokást, hitet, fájdalmat,\namit eddig azért tartottam, mert nem mertem elengedni.\n\nHálaadással teszem le.\nMert ami volt, tanított – és most szabadon mehet.\n\nA telihold megvilágít. Én megengedem, hogy lássak.",
+
+  fogyo: "A Hold fogy.\nÉn is engedem, hogy ami fölösleges, leváljon rólam.\n\nNem kell mindent megtartanom.\nNem kell minden szerepet betöltenem.\nNem kell mindenki elvárásának megfelelnem.\n\nElengedem a túlzott felelősségvállalás terhét,\nazt az érzést, hogy ha én nem teszem meg, összeomlik minden.\nElengedem a bűntudatot, ami akkor keletkezik,\nha határt szabok, ha nemet mondok, ha magamra is figyelek.\n\nMegengedem magamnak a könnyebbséget.\nA fogyó Hold tanítása: az elengedés nem veszteség – felszabadulás.",
+
+  utolso_negyed: "Közel a zárás.\nÉrzem, hogy ez a ciklus a végéhez közeledik.\n\nMi az, amit még befejezetlen hagytam?\nMi az, ami döntésre vár?\nMi az, amit még ki kell mondanom – magamnak vagy másnak?\n\nElengedem a befejezetlen dolgok súlyát,\nazt a szokást, hogy félúton abbahagyom,\nazt a mintát, hogy nehezebb lezárni, mint elkezdeni.\n\nMegengedem magamnak a befejezést.\nMegengedem, hogy egy-egy fejezet véget érjen –\nnélkül, hogy ez az egész vége lenne.\n\nA lezárás nem halál. A lezárás kapu.",
+
+  fogyo_sarló: "Szinte teli a sötétség.\nA Hold visszavonul – és velem együtt visszavonulhat a lelkem is.\n\nNem kell most produkálnom.\nNem kell most láthatónak lennem.\nNem kell most megoldanom semmit.\n\nElengedem azt a késztetést, hogy akkor is tegyem,\nha a testem és a lelkem pihenést kér.\nElengedem a bűntudatot a megállás miatt.\n\nMegengedem magamnak a csendet.\nMegengedem a visszavonulást.\nMegengedem, hogy feltöltődjek.\n\nA következő újhold előtt ez az utolsó adomány önmagamnak:\na teljes, ítéletmentes pihenés."
+};
+
+const RITUALE_DATA = {
+  ujhold: {
+    icon: '🌑', title: 'Újhold Rituálé', subtitle: 'Szándékállítás · Új kezdetek · Magvetés',
+    steps: [
+      {emoji:'🕯️', title:'Tér megtisztítása', desc:'Nyisd ki az ablakot, szellőztess, vagy égesz zsályát/palo santót. Tiszta tért teremtesz az új szándéknak.'},
+      {emoji:'💎', title:'Kristályok feltöltése', desc:'Helyezd ki kristályaidat az ablakpárkányra vagy kertbe. Holdkő, hegyi kristály és obszidián ideálisak újholdra.'},
+      {emoji:'📝', title:'Szándéklevél', desc:'Írj le 3-5 szándékot, amit be szeretnél hívni. Fogalmazz pozitívan, jelen időben.'},
+      {emoji:'🧘', title:'Csend és meditáció', desc:'10 perc csend. Képzeld el, hogy szándékaid már valósággá váltak. Érezd ezt a valóságot a testedben.'},
+      {emoji:'💧', title:'Holdvíz készítése', desc:'Tegyél ki egy üveg vizet holdvilágra – reggelig töltődik. Inni fogsz belőle, vagy felhasználod rituáléhoz.'},
+    ],
+    question: 'Mi az, amit most szeretnék megteremteni az életemben? Mi az az egy szándék, amelyért a legjobban lángolok?',
+    holdviz: 'Az újhold tökéletes idő holdvíz készítésére. Tegyél ki egy üveg friss vizet az ablakpárkányra vagy kertbe még napnyugta előtt. Reggelig töltődik a lunáris energiával. Iszod, locsolsz vele, vagy rituáléban használod.'
+  },
+  telihold: {
+    icon: '🌕', title: 'Telihold Rituálé', subtitle: 'Elengedés · Hála · Megtisztulás',
+    steps: [
+      {emoji:'🛁', title:'Rituális fürdő', desc:'Adj a fürdővízhez tengeri sót, levendulát vagy rózsaszirmot. Képzeld el, ahogy a víz elmossa mindazt, amit el szeretnél engedni.'},
+      {emoji:'💎', title:'Kristályok megtisztítása', desc:'Szelenit, ametiszt és holdkő ideálisak teliholdra. Tisztítsd meg folyó vízzel (ha vízálló), majd töltsd fel holdvilágban.'},
+      {emoji:'🔥', title:'Elengedési rituálé', desc:'Írj egy papírra mindent, amit el szeretnél engedni. Égetsd el gyertyával (biztonságosan), vagy tépd apróra és dobd el.'},
+      {emoji:'🙏', title:'Hálaállítás', desc:'Írj le 10 dolgot, amiért hálás vagy ebben a holdciklusban. Érezd meg a hála melegségét a mellkasodban.'},
+      {emoji:'💧', title:'Holdvíz feltöltés', desc:'Teliholdnál a legerősebb a holdvíz energiája. Ez a legfontosabb éjszaka – tegyél ki vizet holdvilágra.'},
+    ],
+    question: 'Mi az, amitől ideje elengedni? Mi az a régi minta, kapcsolódás, vagy hit, ami már nem szolgálja a fejlődésemet?',
+    holdviz: 'TELIHOLD – a holdvíz legmagasabb energiájú éjszakája! Tegyél ki vizet napnyugta után, és hagyd reggelig a holdvilágon. Ez a víz a legerősebb – különösen alkalmas elengedési rituálékhoz, tisztításhoz és kristályok mellé helyezve.'
+  },
+  novekvo: {
+    icon: '🌒', title: 'Növekvő Hold Rituálé', subtitle: 'Cselekvés · Lendület · Építés',
+    steps: [
+      {emoji:'🌱', title:'Szándék aktiválása', desc:'Vedd elő az újholdnál írt szándékleveleded. Olvasd el hangosan, mintha már valóság lenne.'},
+      {emoji:'💎', title:'Kristályok lendülete', desc:'Citrin (prosperitás), aventurin (szerencse), karneol (motiváció) – ezek segítik a növekvő hold energiáját.'},
+      {emoji:'📋', title:'Konkrét lépések', desc:'Írj le 3 konkrét cselekvést a következő hétre, ami közelebb visz a szándékodhoz.'},
+      {emoji:'🌿', title:'Mozgás rituálé', desc:'10 perc tudatos séta vagy tánc a szabadban. Az energia áramoljon a testedben.'},
+    ],
+    question: 'Milyen konkrét lépést tehetek ma a szándékom megvalósítása felé? Mi gátolja a cselekvésemet?',
+    holdviz: 'Növekvő holdnál a holdvíz a lendületet és a növekedést erősíti. Különösen alkalmas cél-vizualizációhoz: mielőtt kiteszed, tartsd a kezedben és fogalmazd meg szándékodat.'
+  },
+  fogyo: {
+    icon: '🌖', title: 'Fogyó Hold Rituálé', subtitle: 'Elengedés · Megtisztulás · Rendezés',
+    steps: [
+      {emoji:'🧹', title:'Fizikai tér rendezése', desc:'Távolíts el 5-10 tárgyat az otthonodból, amit már nem szeretsz. A külső rend belső rendet teremt.'},
+      {emoji:'💎', title:'Tisztító kristályok', desc:'Füstkvarc, labradorit és ónix segít az elengedésben. Tartsd őket meditáció közben.'},
+      {emoji:'✍️', title:'Elengedési lista', desc:'Írj le 5 dolgot – szokást, gondolatot, érzést – amit elengedsz ebben a ciklusban.'},
+      {emoji:'🧘', title:'Fogyó hold meditáció', desc:'Képzeld el, hogy minden lélegzetkiengedéssel valami nehéz elhagyja a testedet.'},
+    ],
+    question: 'Mi az, ami fárasztja az energiámat? Mit cipelelek még, amit itt az ideje letenni?',
+    holdviz: 'Fogyó holdnál a holdvíz megtisztít és elvezeti a feleslegest. Használd arclemosáshoz, vagy tegyél egy keveset a sarkok megtisztítására az otthonodban.'
+  }
+};
+
+// Default rituálé ha nincs specifikus
+const DEFAULT_RITUAL = RITUALE_DATA.novekvo;
+
+const CYCLE_PHASES = [
+  {
+    name:'Menstruáció', holdKap:'Újhold', emoji:'🌑',
+    color:'#7b4fa6', days:'1–5. nap',
+    desc:'A belső tél – pihenés, befelé fordulás, elengedés ideje. Hagyd, hogy a tested azt csinálja, amit kell. Tiszteld ezt az időt.'
+  },
+  {
+    name:'Follikuláris fázis', holdKap:'Növekvő Hold', emoji:'🌒',
+    color:'#c9a84c', days:'6–13. nap',
+    desc:'A belső tavasz – energiád megújul, kreatív ötletek születnek. Kezdj el valami újat, tervezz, álmodozz bátran.'
+  },
+  {
+    name:'Ovuláció', holdKap:'Telihold', emoji:'🌕',
+    color:'#f5e099', days:'14–17. nap',
+    desc:'A belső nyár – tele vagy energiával, kisugárzódsz, kommunikációd erős. A legjobb idő fontos megbeszélésekre, prezentációkra.'
+  },
+  {
+    name:'Luteális fázis', holdKap:'Fogyó Hold', emoji:'🌗',
+    color:'#4a2080', days:'18–28. nap',
+    desc:'A belső ősz – figyelj a belső hangodra, fejezz be projekteket, tegyél rendet. PMS tünet? A tested jelzi, mi maradt feldolgozatlan.'
+  }
+];
+
+const CRYSTALS_BY_PHASE = {
+  ujhold: 'holdkő, hegyi kristály, obszidián',
+  telihold: 'szelenit, ametiszt, holdkő',
+  novekvo: 'citrin, aventurin, karneol',
+  fogyo: 'füstkvarc, labradorit, ónix',
+  elso_negyed: 'tigriszem, citrin, pirit',
+  utolso_negyed: 'kék kalcedon, türkiz, ametiszt',
+  novekvo_gy: 'zöld aventurin, rozsakvarc, smaragd',
+  fogyo_sarló: 'lepidolit, holdkő, ametiszt'
+};
+
+const MOONWATER_BY_PHASE = {
+  ujhold: 'Az újhold holdvize szándékokat hív be. Tedd ki napnyugta után és hagyd reggelig.',
+  telihold: 'TELIHOLD – a legerősebb holdvíz! Napnyugta után tedd ki, reggel gyűjtsd össze. Különösen hatásos.',
+  novekvo: 'Növekvő hold holdvize lendületet és energiát hoz. Este tedd ki, reggel használd.',
+  fogyo: 'Fogyó hold holdvize megtisztít és elvezeti a feleslegest. Tisztításhoz és elengedéshez ideális.',
+  elso_negyed: 'Első negyed holdvize erőt ad a kihívások leküzdéséhez.',
+  utolso_negyed: 'Utolsó negyed holdvize rendezést és lezárást segít.',
+  novekvo_gy: 'Növekvő gibbous holdvize az érési folyamatot támogatja.',
+  fogyo_sarló: 'Fogyó sarló holdvize pihenést és belső visszavonulást segít.'
+};
+
+// ════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════
+function showScreen(id, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  document.getElementById('screen-'+id).scrollTop=0;
+}
+
+// ════════════════════════════════════════
+//  CALENDAR
+// ════════════════════════════════════════
+let calYear, calMonth;
+const HU_MONTHS = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
+
+function renderCalendar(){
+  const grid = document.getElementById('cal-grid');
+  const label = document.getElementById('cal-month-label');
+  label.textContent = HU_MONTHS[calMonth] + ' ' + calYear;
+  grid.innerHTML='';
+  const today = new Date();
+  const first = new Date(calYear, calMonth, 1);
+  let startDow = first.getDay(); // 0=Sun
+  startDow = startDow === 0 ? 6 : startDow-1; // convert to Mon=0
+
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  for(let i=0;i<startDow;i++){
+    const el=document.createElement('div');
+    el.className='cal-day other-month';
+    const d = prevDays - startDow + i + 1;
+    const date = new Date(calYear, calMonth-1, d);
+    const phase = getPhaseName(getMoonIllumination(date).phase);
+    el.innerHTML=`<span class="day-moon">${phase.icon}</span><span class="day-num">${d}</span>`;
+    grid.appendChild(el);
+  }
+
+  for(let d=1;d<=daysInMonth;d++){
+    const el=document.createElement('div');
+    const date = new Date(calYear, calMonth, d);
+    const illum = getMoonIllumination(date);
+    const phase = getPhaseName(illum.phase);
+    // NASA táblázatból: pontos újhold/telihold jelölés
+    const special = getTodaySpecialEvent(date);
+    let cls='cal-day';
+    if(date.toDateString()===today.toDateString()) cls+=' today';
+    if(special && special.t==='U') cls+=' newmoon';
+    else if(special && special.t==='T') cls+=' fullmoon';
+    else if(phase.key==='ujhold') cls+=' newmoon';
+    else if(phase.key==='telihold') cls+=' fullmoon';
+    el.className=cls;
+    el.innerHTML=`<span class="day-moon">${phase.icon}</span><span class="day-num">${d}</span>`;
+    el.onclick=()=>openDayModal(date);
+    grid.appendChild(el);
+  }
+
+  // Fill remaining
+  const total = startDow + daysInMonth;
+  const rem = total % 7 === 0 ? 0 : 7 - (total%7);
+  for(let i=1;i<=rem;i++){
+    const el=document.createElement('div');
+    el.className='cal-day other-month';
+    const date = new Date(calYear, calMonth+1, i);
+    const phase = getPhaseName(getMoonIllumination(date).phase);
+    el.innerHTML=`<span class="day-moon">${phase.icon}</span><span class="day-num">${i}</span>`;
+    grid.appendChild(el);
+  }
+  renderUpcoming();
+}
+
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+
+function renderUpcoming(){
+  const cont = document.getElementById('upcoming-events');
+  cont.innerHTML='';
+  const today = new Date();
+  const upcoming = getUpcomingEvents(today, 6);
+  upcoming.forEach(ev=>{
+    const evDate = new Date(ev.d);
+    const days = Math.round((evDate - today)/86400000);
+    const dateStr = evDate.toLocaleDateString('hu-HU',{month:'long',day:'numeric'});
+    const timeStr = evDate.getHours().toString().padStart(2,'0')+':'+evDate.getMinutes().toString().padStart(2,'0');
+    const isNew = ev.t === 'U';
+    const icon = isNew ? '🌑' : '🌕';
+    const name = isNew ? 'Újhold' : 'Telihold';
+    const el=document.createElement('div');
+    el.className='event-row';
+    el.innerHTML=`
+      <div class="event-moon">${icon}</div>
+      <div class="event-info">
+        <div class="event-name">${name}</div>
+        <div class="event-date">${dateStr} · ${timeStr}</div>
+      </div>
+      <div class="event-days">${days === 0 ? 'ma' : days+' nap'}</div>
+    `;
+    cont.appendChild(el);
+  });
+}
+
+function openDayModal(date){
+  const illum = getMoonIllumination(date);
+  const phase = getPhaseName(illum.phase);
+  const sign = getMoonSign(date);
+  const times = getMoonTimes(date);
+  const pct = Math.round(illum.fraction * 100);
+  const dateStr = date.toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric'});
+  // NASA táblázatból: van-e ezen a napon újhold/telihold?
+  const specialEvent = getTodaySpecialEvent(date);
+  let extraInfo = '';
+  if(specialEvent) {
+    const t = new Date(specialEvent.d);
+    const timeStr = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    extraInfo = `<p style="margin:6px 0;color:var(--gold);font-family:'Cinzel',serif;font-size:0.85rem;">⚡ Pontos időpont: ${timeStr}</p>`;
+  }
+  document.getElementById('modal-title').textContent = `${phase.icon} ${dateStr}`;
+  document.getElementById('modal-body').innerHTML = `
+    <p><strong style="color:var(--gold-light)">${phase.name}</strong></p>
+    ${extraInfo}
+    <p style="margin:8px 0;color:var(--text-dim)">Holdjegy: ${sign.sym} ${sign.name} · ${sign.el}</p>
+    <p style="margin:8px 0;color:var(--text-dim)">Megvilágítás: ${pct}% · Holdkelte: ${times.rise} · Holdnyugta: ${times.set}</p>
+    <p style="margin:12px 0;line-height:1.7">${ENERGY_TEXTS[phase.key]||ENERGY_TEXTS.novekvo}</p>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ════════════════════════════════════════
+//  TODAY SCREEN
+// ════════════════════════════════════════
+function renderToday(){
+  const now = new Date();
+  const illum = getMoonIllumination(now);
+  const phase = getPhaseName(illum.phase);
+  const sign = getMoonSign(now);
+  const pct = Math.round(illum.fraction * 100);
+  const moonTimes = getMoonTimes(now);
+  const todayEvent = getTodaySpecialEvent(now);
+
+  // Header date
+  const dateStr = now.toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  document.getElementById('header-date').textContent = dateStr;
+
+  // Moon SVG phase
+  drawMoonPhase(illum.phase, illum.fraction);
+
+  // Mai különleges esemény (pontos időpont a NASA táblázatból)
+  let phaseName = phase.name;
+  if(todayEvent) {
+    const t = new Date(todayEvent.d);
+    const timeStr = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    phaseName += ` · ma ${timeStr}`;
+  }
+  document.getElementById('phase-name-display').textContent = phase.icon + ' ' + phaseName;
+  document.getElementById('illumination-display').textContent = `${pct}% megvilágítva`;
+  document.getElementById('sign-badge-display').textContent = sign.sym + ' ' + sign.name + ' · ' + sign.el;
+
+  // Energy text
+  document.getElementById('daily-energy-text').textContent = ENERGY_TEXTS[phase.key]||ENERGY_TEXTS.novekvo;
+
+  // Oldószöveg
+  document.getElementById('oldo-text-display').textContent = OLDO_SZOVEGEK[phase.key]||OLDO_SZOVEGEK.novekvo;
+
+  // Phase %
+  document.getElementById('phase-pct-display').textContent = pct+'%';
+
+  // Holdkelte/nyugta – SunCalc, Várpalota
+  document.getElementById('moonrise-display').textContent = moonTimes.rise;
+  document.getElementById('moonset-display').textContent = moonTimes.set;
+
+  // Crystal banner
+  const crystalBanner = document.getElementById('crystal-banner');
+  if(phase.key==='telihold' || phase.key==='ujhold'){
+    crystalBanner.classList.remove('hidden');
+    document.getElementById('crystal-sub-text').textContent =
+      `Ajánlott: ${CRYSTALS_BY_PHASE[phase.key]}`;
+  } else if(illum.phase < 0.08 || (illum.phase > 0.42 && illum.phase < 0.58)) {
+    crystalBanner.classList.remove('hidden');
+    document.getElementById('crystal-sub-text').textContent =
+      `${phase.name} – töltsd fel: ${CRYSTALS_BY_PHASE[phase.key]||'kristályaidat'}`;
+  } else {
+    crystalBanner.classList.add('hidden');
+  }
+}
+
+function drawMoonPhase(phase, fraction){
+  // phase: 0=újhold, 0.5=telihold (SunCalc)
+  // fraction: 0-1 megvilágítás
+  const overlay = document.getElementById('phase-overlay');
+  overlay.innerHTML='';
+  const waxing = phase < 0.5;
+
+  if(fraction < 0.02){
+    // Újhold – teljesen sötét
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx','65'); circle.setAttribute('cy','65'); circle.setAttribute('r','48');
+    circle.setAttribute('fill','#0d0618'); circle.setAttribute('opacity','0.93');
+    overlay.appendChild(circle);
+    return;
+  }
+  if(fraction > 0.98){
+    // Telihold – nincs árnyék
+    return;
+  }
+
+  // Árnyék oldal és ellipszis szélesség számítása
+  const rx = Math.abs(1 - 2*fraction) * 48;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+
+  if(waxing){
+    // Növekvő: bal oldal sötét
+    const sweep = fraction < 0.5 ? 1 : 0;
+    path.setAttribute('d',`M 65 17 A 48 48 0 0 0 65 113 A ${rx.toFixed(1)} 48 0 0 ${sweep} 65 17 Z`);
+  } else {
+    // Fogyó: jobb oldal sötét
+    const sweep = fraction < 0.5 ? 0 : 1;
+    path.setAttribute('d',`M 65 17 A 48 48 0 0 1 65 113 A ${rx.toFixed(1)} 48 0 0 ${sweep} 65 17 Z`);
+  }
+  path.setAttribute('fill','#0d0618');
+  path.setAttribute('opacity','0.90');
+  overlay.appendChild(path);
+}
+
+// ════════════════════════════════════════
+//  RITUÁLÉ SCREEN
+// ════════════════════════════════════════
+function renderRitual(){
+  const now = new Date();
+  const illum = getMoonIllumination(now);
+  const phase = getPhaseName(illum.phase);
+
+  let data;
+  if(phase.key==='ujhold') data=RITUALE_DATA.ujhold;
+  else if(phase.key==='telihold') data=RITUALE_DATA.telihold;
+  else if(illum.phase < 0.5) data=RITUALE_DATA.novekvo;
+  else data=RITUALE_DATA.fogyo;
+
+  document.getElementById('ritual-phase-icon').textContent=data.icon;
+  document.getElementById('ritual-title').textContent=data.title;
+  document.getElementById('ritual-subtitle').textContent=data.subtitle;
+  document.getElementById('journal-question-text').textContent=data.question;
+  document.getElementById('holdviz-text').textContent=data.holdviz;
+
+  const list=document.getElementById('ritual-steps-list');
+  list.innerHTML='';
+  const doneKey='ritual_done_'+getTodayKey();
+  const done = JSON.parse(localStorage.getItem(doneKey)||'[]');
+
+  data.steps.forEach((step,i)=>{
+    const isDone = done.includes(i);
+    const el=document.createElement('div');
+    el.className='ritual-step';
+    el.innerHTML=`
+      <div class="step-num${isDone?' done':''}">${isDone?'✓':i+1}</div>
+      <div class="step-content">
+        <div class="step-title">${step.emoji} ${step.title}</div>
+        <div class="step-desc">${step.desc}</div>
+      </div>
+    `;
+    el.onclick=()=>toggleRitualStep(i, doneKey, el);
+    list.appendChild(el);
+  });
+
+  // Load saved journal
+  const savedJournal = localStorage.getItem('ritual_journal_'+getTodayKey())||'';
+  document.getElementById('ritual-journal-input').value=savedJournal;
+}
+
+function toggleRitualStep(idx, doneKey, el){
+  const done = JSON.parse(localStorage.getItem(doneKey)||'[]');
+  const i = done.indexOf(idx);
+  if(i>-1) done.splice(i,1); else done.push(idx);
+  localStorage.setItem(doneKey, JSON.stringify(done));
+  const numEl = el.querySelector('.step-num');
+  if(done.includes(idx)){ numEl.classList.add('done'); numEl.textContent='✓'; showToast('✦ Kész!'); }
+  else { numEl.classList.remove('done'); numEl.textContent=idx+1; }
+}
+
+function saveRitualJournal(){
+  const txt = document.getElementById('ritual-journal-input').value.trim();
+  if(!txt){ showToast('Nincs mit menteni...'); return; }
+  const key='ritual_journal_'+getTodayKey();
+  localStorage.setItem(key, txt);
+  // Also save to journal
+  const now = new Date();
+  const phase = getPhaseName(getMoonIllumination(now).phase);
+  const entry={date:getTodayKey(), phase:phase.icon, mood:'🕯️', text:'[Rituálé napló] '+txt};
+  saveEntry(entry);
+  showToast('✦ Mentve a naplóba');
+}
+
+// ════════════════════════════════════════
+//  CIKLUS SCREEN
+// ════════════════════════════════════════
+function renderCyclus(){
+  const list = document.getElementById('phase-cards-list');
+  list.innerHTML='';
+  CYCLE_PHASES.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='phase-card';
+    el.innerHTML=`
+      <div class="phase-dot" style="background:${p.color}"></div>
+      <div class="phase-info">
+        <div class="phase-name">${p.emoji} ${p.name} · <span style="font-size:0.7rem;color:var(--text-faint)">${p.days}</span></div>
+        <div class="phase-hold">⟡ Hold párhuzam: ${p.holdKap}</div>
+        <div class="phase-desc">${p.desc}</div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+
+  // Load saved cycle start
+  const savedStart = localStorage.getItem('cycle_start')||'';
+  const savedLen = localStorage.getItem('cycle_length')||'28';
+  if(savedStart) document.getElementById('cycle-start-input').value=savedStart;
+  document.getElementById('cycle-length-input').value=savedLen;
+
+  updateCurrentCyclePhase();
+}
+
+function saveCycleStart(){
+  const val = document.getElementById('cycle-start-input').value;
+  localStorage.setItem('cycle_start', val);
+  updateCurrentCyclePhase();
+}
+function saveCycleLength(){
+  const val = document.getElementById('cycle-length-input').value;
+  localStorage.setItem('cycle_length', val);
+  updateCurrentCyclePhase();
+}
+
+function updateCurrentCyclePhase(){
+  const start = localStorage.getItem('cycle_start');
+  const len = parseInt(localStorage.getItem('cycle_length')||'28');
+  if(!start){ return; }
+  const startDate = new Date(start);
+  const today = new Date();
+  const diff = Math.floor((today-startDate)/86400000);
+  const cycleDay = ((diff % len) + len) % len + 1;
+
+  let phase;
+  if(cycleDay <= 5) phase = CYCLE_PHASES[0];
+  else if(cycleDay <= 13) phase = CYCLE_PHASES[1];
+  else if(cycleDay <= 17) phase = CYCLE_PHASES[2];
+  else phase = CYCLE_PHASES[3];
+
+  document.getElementById('cycle-emoji').textContent=phase.emoji;
+  document.getElementById('cycle-phase-name').textContent=phase.name;
+  document.getElementById('cycle-phase-desc').textContent=phase.desc;
+  document.getElementById('cycle-day-count').textContent=`Ciklus ${cycleDay}. napja · ${len} napos ciklus`;
+}
+
+// ════════════════════════════════════════
+//  NAPLÓ SCREEN
+// ════════════════════════════════════════
+let selectedMood = '';
+
+function selectMood(btn){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedMood = btn.dataset.mood;
+}
+
+function saveJournalEntry(){
+  const txt = document.getElementById('journal-textarea').value.trim();
+  if(!txt){ showToast('Írj valamit a naplóba...'); return; }
+  const now = new Date();
+  const illum = getMoonIllumination(now);
+  const phase = getPhaseName(illum.phase);
+  const entry = {
+    date: getTodayKey(),
+    phase: phase.icon,
+    mood: selectedMood||'🌙',
+    text: txt
+  };
+  saveEntry(entry);
+  document.getElementById('journal-textarea').value='';
+  selectedMood='';
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  renderNaplo();
+  showToast('✦ Bejegyzés elmentve');
+}
+
+function saveEntry(entry){
+  const key='journal_entry_'+entry.date+'_'+Date.now();
+  localStorage.setItem(key, JSON.stringify(entry));
+  updateStreak();
+}
+
+function updateStreak(){
+  let streak=0;
+  const today = new Date();
+  for(let i=0;i<365;i++){
+    const d = new Date(today.getTime()-i*86400000);
+    const k = getDateKey(d);
+    const hasEntry = Object.keys(localStorage).some(key=>key.startsWith('journal_entry_'+k));
+    if(hasEntry) streak++;
+    else if(i>0) break;
+  }
+  localStorage.setItem('streak', streak);
+}
+
+function renderNaplo(){
+  // Streak
+  const streak = parseInt(localStorage.getItem('streak')||'0');
+  document.getElementById('streak-display').textContent=streak;
+
+  // Today label
+  const now = new Date();
+  const illum = getMoonIllumination(now);
+  const phase = getPhaseName(illum.phase);
+  const dateStr = now.toLocaleDateString('hu-HU',{month:'long',day:'numeric'});
+  document.getElementById('today-entry-label').textContent = `${phase.icon} ${dateStr} · Mai bejegyzés`;
+
+  // Past entries
+  const cont = document.getElementById('past-entries-list');
+  cont.innerHTML='<div class="past-title" style="margin-top:16px;">Korábbi bejegyzések</div>';
+
+  const entries=[];
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith('journal_entry_')){
+      try{ entries.push(JSON.parse(localStorage.getItem(k))); }catch(e){}
+    }
+  });
+  entries.sort((a,b)=>b.date.localeCompare(a.date));
+
+  if(entries.length===0){
+    const el=document.createElement('div');
+    el.className='empty-journal';
+    el.textContent='Még nincs bejegyzés. Kezd el ma a holdnaplódat... 🌙';
+    cont.appendChild(el);
+    return;
+  }
+
+  entries.slice(0,20).forEach(e=>{
+    const el=document.createElement('div');
+    el.className='past-entry';
+    const dateDisp = e.date.replace(/-/g,'.');
+    el.innerHTML=`
+      <div class="past-entry-header">
+        <span class="past-entry-date">${dateDisp}</span>
+        <span class="past-entry-moon">${e.phase||'🌙'}</span>
+        <span class="past-entry-mood">${e.mood||''}</span>
+      </div>
+      <div class="past-entry-text">${e.text}</div>
+    `;
+    cont.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function getTodayKey(){
+  return getDateKey(new Date());
+}
+function getDateKey(d){
+  return d.getFullYear()+'-'
+    +String(d.getMonth()+1).padStart(2,'0')+'-'
+    +String(d.getDate()).padStart(2,'0');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+function init(){
+  const now = new Date();
+  calYear=now.getFullYear();
+  calMonth=now.getMonth();
+
+  renderToday();
+  renderCalendar();
+  renderRitual();
+  renderCyclus();
+  renderNaplo();
+  updateStreak();
+
+  // Patch nav buttons to also re-render screens
+  const orig = window.showScreen;
+}
+
+init();
+</script>
+<script>
+// ── SERVICE WORKER REGISZTRÁCIÓ ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('✅ SW regisztrálva:', reg.scope);
+        // Frissítés ellenőrzése
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('🔄 Új verzió elérhető');
+            }
+          });
+        });
+      })
+      .catch(err => console.log('SW regisztráció sikertelen:', err));
+  });
+}
+
+// ── PWA TELEPÍTÉSI PROMPT ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Megjelenítünk egy diszkrét telepítési bannert
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px; z-index: 500;
+    background: linear-gradient(135deg, rgba(74,32,128,0.97), rgba(45,21,87,0.97));
+    border-bottom: 1px solid rgba(201,168,76,0.4);
+    padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+    backdrop-filter: blur(10px);
+  `;
+  banner.innerHTML = `
+    <span style="font-size:1.3rem">🌙</span>
+    <span style="flex:1;font-family:'Crimson Pro',serif;font-size:0.9rem;color:#e8dff5">
+      Telepítsd az appot a kezdőképernyőre
+    </span>
+    <button onclick="installApp()" style="
+      background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.5);
+      border-radius:8px;padding:6px 12px;color:#e8c96d;
+      font-family:'Cinzel',serif;font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;
+    ">Telepítés</button>
+    <button onclick="document.getElementById('install-banner').remove()" style="
+      background:none;border:none;color:#6a5a8a;cursor:pointer;font-size:1.1rem;padding:4px;
+    ">✕</button>
+  `;
+  document.body.appendChild(banner);
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(result => {
+      if (result.outcome === 'accepted') {
+        document.getElementById('install-banner')?.remove();
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner')?.remove();
+  showToast('✦ App telepítve!');
+});
+</script>
+</body>
+</html>
