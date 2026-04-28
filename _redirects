@@ -1,0 +1,3 @@
+# IBAR Gyerek PWA – Netlify átirányítások
+# PWA-nál minden útvonal az index.html-re mutat (SPA routing)
+/*  /index.html  200

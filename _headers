@@ -1,0 +1,23 @@
+# IBAR Gyerek PWA – Netlify fejlécek
+# Ez a fájl az index.html, sw.js és manifest.json mellé kerül
+
+# Service Worker – ne cache-elje a Netlify, mindig friss legyen
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+# Manifest – rövid cache
+/manifest.json
+  Cache-Control: public, max-age=3600
+  Content-Type: application/manifest+json
+
+# Ikonok – hosszú cache (ritkán változnak)
+/icon-*.png
+  Cache-Control: public, max-age=604800
+
+# Főoldal – ne cache-elje erősen, hogy frissítés esetén betöltse
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
